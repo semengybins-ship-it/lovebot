@@ -17,7 +17,7 @@ bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
 # Ссылка на твое Mini App на GitHub Pages
-WEB_APP_URL = "https://YOUR_GITHUB_USERNAME.github.io/YOUR_REPO_NAME/"
+WEB_APP_URL = "https://semengybins-ship-it.github.io/lovebot/"
 
 
 @dp.message(Command("start"))
