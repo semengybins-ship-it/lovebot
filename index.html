@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Пиксельный Опросник</title>
+  <!-- Telegram Web App SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <!-- Пиксельный шрифт из Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: #ffd6e0;
+      background-image: 
+        linear-gradient(90deg, rgba(255, 182, 193, 0.4) 1px, transparent 1px),
+        linear-gradient(rgba(255, 182, 193, 0.4) 1px, transparent 1px);
+      background-size: 16px 16px;
+      font-family: 'Press Start 2P', cursive;
+      color: #5c2c3b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .card {
+      background-color: #fff0f5;
+      border: 4px solid #ff70a6;
+      box-shadow: 
+        4px 4px 0px #ff9ebb,
+        8px 8px 0px #ff477e;
+      padding: 20px;
+      max-width: 360px;
+      width: 100%;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .progress {
+      font-size: 10px;
+      color: #ff477e;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .question {
+      font-size: 13px;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #4a1525;
+      word-wrap: break-word;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    .btn {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 12px;
+      padding: 14px 20px;
+      border: 3px solid #4a1525;
+      cursor: pointer;
+      flex: 1;
+      transition: transform 0.05s ease, box-shadow 0.05s ease;
+      text-transform: uppercase;
+    }
+
+    .btn-yes {
+      background-color: #ff70a6;
+      color: #ffffff;
+      box-shadow: 3px 3px 0px #4a1525;
+    }
+
+    .btn-no {
+      background-color: #ffb6c1;
+      color: #4a1525;
+      box-shadow: 3px 3px 0px #4a1525;
+    }
+
+    .btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0px 0px 0px #4a1525;
+    }
+
+    .hearts {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    /* Экран завершения */
+    .finished-screen {
+      display: none;
+    }
+
+    .finished-screen.active {
+      display: block;
+    }
+
+    .heart-icon {
+      font-size: 32px;
+      margin-bottom: 16px;
+      animation: pulse 1s infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.15); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div id="quiz-screen">
+      <div class="hearts">💖 ✨ 💖</div>
+      <div class="progress" id="progress-text">ВОПРОС 1 ИЗ 7</div>
+      <div class="question" id="question-text">Загрузка...</div>
+
+      <div class="buttons">
+        <button class="btn btn-yes" onclick="answer('Да')">ДА</button>
+        <button class="btn btn-no" onclick="answer('Нет')">НЕТ</button>
+      </div>
+    </div>
+
+    <div id="finished-screen" class="finished-screen">
+      <div class="heart-icon">💌</div>
+      <div class="question" style="min-height: auto; margin-bottom: 12px;">СПАСИБО ЗА ОТВЕТЫ!</div>
+      <p style="font-size: 10px; line-height: 1.5; color: #ff477e;">Ответы отправлены! ✨</p>
+    </div>
+  </div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Раскрываем окно на всю высоту
+
+    const questions = [
+      "1. Ты человек?",
+      "2. Твои родители случайно не пекари?",
+      "3. Любишь Верити?",
+      "4. Смешно шутишь?",
+      "5. Гулять пойдем?",
+      "6. У тебя много отцов?",
+      "7. Ты меня сталкеришь?"
+    ];
+
+    let currentStep = 0;
+
+    function renderQuestion() {
+      document.getElementById('progress-text').innerText = `ВОПРОС ${currentStep + 1} ИЗ ${questions.length}`;
+      document.getElementById('question-text').innerText = questions[currentStep];
+    }
+
+    function answer(userAnswer) {
+      const qNumber = currentStep + 1;
+      const qText = questions[currentStep];
+
+      // Отправляем данные в Telegram бот
+      const payload = JSON.stringify({
+        question_num: qNumber,
+        question_text: qText,
+        answer: userAnswer
+      });
+
+      tg.sendData(payload);
+
+      currentStep++;
+
+      if (currentStep < questions.length) {
+        renderQuestion();
+      } else {
+        document.getElementById('quiz-screen').style.display = 'none';
+        document.getElementById('finished-screen').classList.add('active');
+        setTimeout(() => {
+          tg.close();
+        }, 2000);
+      }
+    }
+
+    // Инициализация при старте
+    renderQuestion();
+  </script>
+</body>
+</html>
